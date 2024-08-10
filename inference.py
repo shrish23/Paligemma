@@ -1,7 +1,8 @@
 from PIL import Image
 import torch
 import fire
-
+import requests
+from io import BytesIO
 from processing_paligemma import PaliGemmaProcessor
 from modelling_gemma import KVCache, PaliGemmaForConditionalGeneration
 from utils import load_hf_model
@@ -33,7 +34,13 @@ def _sample_top_p(probs: torch.Tensor, p: float):
 
 def get_model_inputs(processor: PaliGemmaProcessor, prompt: str, image_file_path: str, device: str):
 
-    image = Image.open(image_file_path)
+    # Check if image_file_path is a URL
+    if image_file_path.startswith("http://") or image_file_path.startswith("https://"):
+        response = requests.get(image_file_path)
+        image = Image.open(BytesIO(response.content))
+    else:
+        image = Image.open(image_file_path)
+
     images = [image]
     prompts = [prompt]
     model_inputs = processor(text=prompts, images=images)
